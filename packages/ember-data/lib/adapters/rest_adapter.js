@@ -50,6 +50,11 @@ DS.RESTAdapter = DS.Adapter.extend({
       context: this,
       success: function(json) {
         this.didCreateRecords(store, type, records, json);
+      },
+      error: function(xhr, status, error) {
+        records.forEach(function(record) {
+          store.recordWasInvalid(record, error);
+        });
       }
     });
   },
