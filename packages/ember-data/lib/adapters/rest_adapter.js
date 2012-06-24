@@ -78,6 +78,9 @@ DS.RESTAdapter = DS.Adapter.extend({
       context: this,
       success: function(json) {
         this.didUpdateRecord(store, type, record, json);
+      },
+      error: function(xhr, status, error) {
+        store.recordWasInvalid(record, error);
       }
     });
   },
@@ -107,6 +110,11 @@ DS.RESTAdapter = DS.Adapter.extend({
       context: this,
       success: function(json) {
         this.didUpdateRecords(store, type, records, json);
+      },
+      error: function(xhr, status, error) {
+        records.forEach(function(record) {
+          store.recordWasInvalid(record, error);
+        });
       }
     });
   },

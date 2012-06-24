@@ -856,12 +856,12 @@ test("if creating a person fails the record becomes invalid", function() {
   person = store.createRecord(Person, { name: "John Zorn" });
 
   expectState('new');
+  expectState('valid');
   store.commit();
-  expectState('saving');
 
-  // the user permissions don't authorize creating a person on the server
+  // the user permissions don't authorize creating people on the server
   ajaxHash.error('xhr', 'error', 'Not Authorized');
-  expectState('saving', false);
+  expectState('new');
   expectState('valid', false);
   equal(get(person, 'errors'), ["Not Authorized"], "the errors should be set");
 
@@ -869,7 +869,7 @@ test("if creating a person fails the record becomes invalid", function() {
   store.commit();
 });
 
-test("if creating multiple persons failse (with bulkCommit) the records become invalid", function() {
+test("if creating multiple persons fails (with bulkCommit) the records become invalid", function() {
   set(adapter, 'bulkCommit', true);
 
   person = store.createRecord(Person, { name: "John Zorn" });
@@ -877,14 +877,69 @@ test("if creating multiple persons failse (with bulkCommit) the records become i
 
   expectState('new');
   expectState('new', true, other);
+  expectState('valid');
+  expectState('valid', true, other);
   store.commit();
-  expectState('saving');
-  expectState('saving', true, other);
 
-  // the user permissions don't authorize creating a person on the server
+  // the user permissions don't authorize creating people on the server
   ajaxHash.error('xhr', 'error', 'Not Authorized');
-  expectState('saving', false);
-  expectState('saving', false, other);
+  expectState('new');
+  expectState('new', true, other);
+  expectState('valid', false);
+  expectState('valid', false, other);
+  equal(get(person, 'errors'), ["Not Authorized"], "the errors should be set");
+  equal(get(other, 'errors'), ["Not Authorized"], "the errors should be set");
+
+  person.deleteRecord();
+  other.deleteRecord();
+  store.commit();
+});
+
+test("if creating a person fails the record becomes invalid", function() {
+  store.load(Person, { id: 1, name: "Douglas Adams" });
+
+  person = store.find(Person, 1);
+
+  set(person, 'name', "Dave Douglas");
+
+  expectState('dirty');
+  expectState('valid');
+  store.commit();
+
+  // the user permissions don't authorize updating on the server
+  ajaxHash.error('xhr', 'error', 'Not Authorized');
+  expectState('dirty');
+  expectState('valid', false);
+  equal(get(person, 'errors'), ["Not Authorized"], "the errors should be set");
+
+  person.deleteRecord();
+  store.commit();
+});
+
+test("if creating multiple persons fails (with bulkCommit) the records become invalid", function() {
+  set(adapter, 'bulkCommit', true);
+
+  store.loadMany(Person, [
+    { id: 1, name: "Douglas Adams" },
+    { id: 2, name: "Greg Lemon" }
+  ]);
+
+  person = store.find(Person, 1);
+  var other = store.find(Person, 2);
+
+  set(person, 'name', "Dave Douglas");
+  set(other,  'name', "Greg Cohen");
+
+  expectState('dirty');
+  expectState('dirty', true, other);
+  expectState('valid');
+  expectState('valid', true, other);
+  store.commit();
+
+  // the user permissions don't authorize updating on the server
+  ajaxHash.error('xhr', 'error', 'Not Authorized');
+  expectState('dirty');
+  expectState('dirty', true, other);
   expectState('valid', false);
   expectState('valid', false, other);
   equal(get(person, 'errors'), ["Not Authorized"], "the errors should be set");
