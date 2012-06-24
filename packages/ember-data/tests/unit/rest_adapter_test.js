@@ -13,7 +13,7 @@ module("the REST adapter", {
 
     adapter = DS.RESTAdapter.create({
       ajax: function(url, type, hash) {
-        var success = hash.success, self = this;
+        var success = hash.success, error = hash.error, self = this;
 
         ajaxUrl = url;
         ajaxType = type;
@@ -22,6 +22,11 @@ module("the REST adapter", {
         if (success) {
           hash.success = function(json) {
             success.call(self, json);
+          };
+        }
+        else if (error) {
+          hash.error = function(errorString) {
+            error.call(self, 'jqXHR', 'error', errorString);
           };
         }
       },
@@ -845,4 +850,21 @@ test("additional data can be sideloaded with associations in correct order", fun
       id: 1, name: "Yehuda Katz"
     }]
   });
+});
+
+test("if creating a person fails the record becomes invalid", function() {
+  person = store.createRecord(Person, { name: "John Zorn" });
+
+  expectState('new');
+  store.commit();
+  expectState('saving');
+
+  // the user permissions don't authorize creating a person on the server
+  ajaxHash.error('xhr', 'error', 'Not Authorized');
+  expectState('saving', false);
+  expectState('valid', false);
+  equal(get(person, 'errors'), ["Not Authorized"], "the errors should be set");
+
+  person.deleteRecord();
+  store.commit();
 });
