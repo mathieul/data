@@ -134,6 +134,9 @@ DS.RESTAdapter = DS.Adapter.extend({
       context: this,
       success: function(json) {
         this.didDeleteRecord(store, type, record, json);
+      },
+      error: function(xhr, status, error) {
+        store.recordWasInvalid(record, error);
       }
     });
   },

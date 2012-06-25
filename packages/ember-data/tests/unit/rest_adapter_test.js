@@ -949,3 +949,25 @@ test("if creating multiple persons fails (with bulkCommit) the records become in
   other.deleteRecord();
   store.commit();
 });
+
+test("if deleting a person fails the record becomes invalid", function() {
+  store.load(Person, { id: 1, name: "Joey Baron" });
+
+  person = store.find(Person, 1);
+
+  person.deleteRecord();
+
+  expectState('deleted');
+  expectState('valid');
+  store.commit();
+
+  // the user permissions don't authorize updating on the server
+  ajaxHash.error('xhr', 'error', 'Not Authorized');
+  expectState('deleted', false);
+  expectState('valid', false);
+  equal(get(person, 'errors'), ["Not Authorized"], "the errors should be set");
+
+  person.deleteRecord();
+  store.commit();
+});
+
